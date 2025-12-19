@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx tsc:*)",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(./run.sh)",
+      "Bash(docker compose:*)",
+      "Bash(make start:*)"
+    ]
+  }
+}

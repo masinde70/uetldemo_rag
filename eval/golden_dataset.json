@@ -1,0 +1,150 @@
+{
+  "name": "sisuiq-golden",
+  "version": "1.0.0",
+  "description": "Golden dataset for SISUiQ RAG evaluation - UETCL strategy and ERA regulatory compliance",
+  "cases": [
+    {
+      "id": "strat-001",
+      "query": "What is UETCL's strategic vision?",
+      "mode": "strategy_qa",
+      "expected_keywords": ["transmission", "electricity", "uganda", "grid"],
+      "expected_sources": [],
+      "expected_answer_contains": null,
+      "min_relevance_score": 0.8,
+      "category": "strategy",
+      "notes": null
+    },
+    {
+      "id": "strat-002",
+      "query": "What are UETCL's key strategic objectives?",
+      "mode": "strategy_qa",
+      "expected_keywords": ["objective", "goal", "target"],
+      "expected_sources": [],
+      "expected_answer_contains": null,
+      "min_relevance_score": 0.7,
+      "category": "strategy",
+      "notes": null
+    },
+    {
+      "id": "strat-003",
+      "query": "How does UETCL plan to expand transmission capacity?",
+      "mode": "strategy_qa",
+      "expected_keywords": ["expansion", "capacity", "infrastructure"],
+      "expected_sources": [],
+      "expected_answer_contains": null,
+      "min_relevance_score": 0.7,
+      "category": "strategy",
+      "notes": null
+    },
+    {
+      "id": "strat-004",
+      "query": "What challenges does UETCL face in grid modernization?",
+      "mode": "strategy_qa",
+      "expected_keywords": ["challenge", "modernization"],
+      "expected_sources": [],
+      "expected_answer_contains": null,
+      "min_relevance_score": 0.7,
+      "category": "strategy",
+      "notes": null
+    },
+    {
+      "id": "act-001",
+      "query": "What actions should we take to reduce transmission losses?",
+      "mode": "actions",
+      "expected_keywords": ["reduce", "loss", "action"],
+      "expected_sources": [],
+      "expected_answer_contains": null,
+      "min_relevance_score": 0.7,
+      "category": "actions",
+      "notes": null
+    },
+    {
+      "id": "act-002",
+      "query": "How can we improve grid reliability?",
+      "mode": "actions",
+      "expected_keywords": ["reliability", "improve"],
+      "expected_sources": [],
+      "expected_answer_contains": null,
+      "min_relevance_score": 0.7,
+      "category": "actions",
+      "notes": null
+    },
+    {
+      "id": "act-003",
+      "query": "What maintenance actions are recommended for substations?",
+      "mode": "actions",
+      "expected_keywords": ["maintenance", "substation"],
+      "expected_sources": [],
+      "expected_answer_contains": null,
+      "min_relevance_score": 0.7,
+      "category": "actions",
+      "notes": null
+    },
+    {
+      "id": "ana-001",
+      "query": "Analyze the outage trends from the data",
+      "mode": "analytics",
+      "expected_keywords": ["outage", "trend"],
+      "expected_sources": [],
+      "expected_answer_contains": null,
+      "min_relevance_score": 0.7,
+      "category": "analytics",
+      "notes": null
+    },
+    {
+      "id": "ana-002",
+      "query": "What regions have the highest outage frequency?",
+      "mode": "analytics",
+      "expected_keywords": ["region", "frequency"],
+      "expected_sources": [],
+      "expected_answer_contains": null,
+      "min_relevance_score": 0.7,
+      "category": "analytics",
+      "notes": null
+    },
+    {
+      "id": "reg-001",
+      "query": "What are ERA's requirements for grid code compliance?",
+      "mode": "regulatory",
+      "expected_keywords": ["ERA", "compliance", "grid"],
+      "expected_sources": ["era"],
+      "expected_answer_contains": null,
+      "min_relevance_score": 0.7,
+      "category": "regulatory",
+      "notes": null
+    },
+    {
+      "id": "reg-002",
+      "query": "What reporting obligations does UETCL have to ERA?",
+      "mode": "regulatory",
+      "expected_keywords": ["report", "obligation", "ERA"],
+      "expected_sources": [],
+      "expected_answer_contains": null,
+      "min_relevance_score": 0.7,
+      "category": "regulatory",
+      "notes": null
+    },
+    {
+      "id": "reg-003",
+      "query": "What are the license conditions for transmission operators?",
+      "mode": "regulatory",
+      "expected_keywords": ["license", "transmission"],
+      "expected_sources": [],
+      "expected_answer_contains": null,
+      "min_relevance_score": 0.7,
+      "category": "regulatory",
+      "notes": null
+    },
+    {
+      "id": "edge-001",
+      "query": "What is the meaning of life?",
+      "mode": "strategy_qa",
+      "expected_keywords": [],
+      "expected_sources": [],
+      "expected_answer_contains": null,
+      "min_relevance_score": 0.5,
+      "category": "edge",
+      "notes": "Should gracefully handle off-topic questions"
+    }
+  ]
+}

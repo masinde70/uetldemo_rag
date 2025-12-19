@@ -1,0 +1,147 @@
+services:
+  # --- Nginx Reverse Proxy ---
+  # ONLY externally exposed service
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      # Uncomment for TLS:
+      # - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Uncomment for TLS certs:
+      # - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - sisuiq-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    # Internal only - no external ports exposed
+    expose:
+      - "3000"
+    environment:
+      - BACKEND_URL=http://backend:8000
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-demo-admin-token-change-me}
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - sisuiq-network
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    # Internal only - no external ports exposed
+    expose:
+      - "8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://sisuiq:sisuiq@postgres:5432/sisuiq
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - CORS_ORIGINS=http://localhost,http://localhost:80,http://nginx
+      - ENVIRONMENT=development
+      - ADMIN_TOKEN=demo-admin-token-change-me
+      # For production, set OPENAI_API_KEY via secrets or environment
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-placeholder-set-real-key}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    networks:
+      - sisuiq-network
+
+  # Database seed service - runs only in dev profile
+  seed:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    command: ["python", "-m", "backend.seed"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://sisuiq:sisuiq@postgres:5432/sisuiq
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - sisuiq-network
+    profiles:
+      - dev
+    # One-shot container - exits after seeding
+    restart: "no"
+
+  postgres:
+    image: postgres:16-alpine
+    # Internal only - no external ports
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=sisuiq
+      - POSTGRES_PASSWORD=sisuiq
+      - POSTGRES_DB=sisuiq
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sisuiq"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sisuiq-network
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    # Internal only - no external ports
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/6333' 2>/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - sisuiq-network
+
+  # Prometheus for dev metrics (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    networks:
+      - sisuiq-network
+    profiles:
+      - dev
+    depends_on:
+      - backend
+
+networks:
+  sisuiq-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  qdrant_data:
+  prometheus_data:

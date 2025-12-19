@@ -1,0 +1,285 @@
+# SISUiQ – UETCL Strategy, Regulatory & Service Copilot (Demo Version)
+
+## Project Overview
+
+SISUiQ is a full-stack AI copilot demo built for UETCL (Uganda Electricity Transmission Company Ltd). It demonstrates how AI can unify Strategy, Analytics, and Regulatory intelligence into a single decision-support platform.
+
+**Core Mission**: Create a Unified AI Knowledge & Decision Layer for utilities that combines:
+- Hybrid RAG (semantic + keyword search + RRF fusion)
+- Agentic reasoning (multi-mode agent)
+- Analytics summarization (outage data)
+- Strategy document understanding
+- Regulatory intelligence (ERA website + guidelines)
+
+---
+
+## Key Capabilities
+
+### 1. UETCL Strategy Copilot
+- Answers questions about UETCL's 2024–2029 Strategic Plan
+- Extracts, summarizes, and explains objectives, KPIs, pillars, initiatives
+- Turns strategy into action items
+- Provides citation-backed answers
+- Uses hybrid RAG (semantic + keyword + RRF)
+
+### 2. Regulatory Intelligence Mode (ERA)
+- Built from ERA website data (policies, obligations, indicators, strategy, guidelines)
+- ERA compliance Q&A
+- Generation of regulatory checklists
+- Mapping UETCL goals to ERA expectations
+- Summarizing regulatory frameworks
+- Explaining license requirements, performance indicators, etc.
+
+### 3. Analytics + Strategy Fusion
+- Using demo outage CSV data:
+  - Aggregates outages by cause, region, duration
+  - Creates analytics snapshot
+  - Combines analytics + strategy + regulation in answers
+  - Produces recommendations aligned with ERA and UETCL goals
+
+### 4. Admin Dashboard
+- View sessions
+- View ingestion documents
+- View analytics snapshots
+- Monitor model usage
+
+---
+
+## Technical Architecture
+
+### Frontend (Next.js + shadcn/ui)
+- **Location**: `/frontend`
+- **Framework**: Next.js 15 with App Router
+- **UI Library**: shadcn/ui components
+- **Styling**: Tailwind CSS
+- **Theme**: Futuristic, space-themed UI
+- **Features**:
+  - Chat interface with selectable modes
+  - Insights panel with analytics visualizations
+  - Admin dashboard
+  - Optional 3D elements using Spline
+
+**Agent Modes Available**:
+1. Strategy Q&A
+2. Action Recommendations
+3. Analytics + Strategy
+4. ERA Regulatory Mode
+
+### Backend (FastAPI)
+- **Location**: `/backend`
+- **Framework**: FastAPI (Python 3.13+)
+- **Key Endpoints**:
+  - `/api/chat` — main agent endpoint
+  - `/api/ingest/docs` — ingest strategy PDFs, ERA content
+  - `/api/ingest/data` — ingest outage CSV
+  - `/api/admin/*` — admin intelligence API
+
+**Core Implementations**:
+- Hybrid RAG system (Qdrant vector + Postgres FTS + RRF fusion)
+- Agent controller with multiple modes
+- Analytics summarization engine
+- Session + message storage
+- Optional JWT demo auth
+
+### Datastores
+
+**Qdrant** (Vector Database)
+- Stores document embeddings
+- Semantic search capability
+- Used for conceptual retrieval
+
+**PostgreSQL** (Relational Database)
+- Tables: users, sessions, chat_messages, analytics, document_metadata
+- Full-text search (FTS) for keyword matching
+- Structured data storage
+
+### AI Models
+- **LLM**: GPT-4.1 (or latest) for reasoning
+- **Embeddings**: text-embedding-3-small for vector embeddings
+
+---
+
+## Hybrid Retrieval Design
+
+### Keyword Search (PostgreSQL FTS)
+- Catches exact terms, codes, years, KPIs
+- Ideal for: policy numbers, dates, specific identifiers
+
+### Semantic Search (Qdrant)
+- Catches concepts, paraphrases, synonyms
+- Ideal for: conceptual queries, natural language
+
+### Fusion (RRF - Reciprocal Rank Fusion)
+- Merges both ranked lists into unified top-N results
+- Significantly improves precision for:
+  - Policies
+  - KPIs
+  - Regulatory requirements
+  - Technical guidelines
+  - Strategic plans
+
+---
+
+## Agent Modes
+
+### Mode 1: Strategy Q&A
+- Uses RAG only
+- Direct answers from strategy documents
+- Citation-backed responses
+
+### Mode 2: Action Planner
+- Uses RAG + reasoning
+- Generates actionable recommendations
+- Turns strategy into implementation steps
+
+### Mode 3: Analytics + Strategy
+- Uses: RAG + analytics summary + alignment engine
+- Combines operational data with strategic goals
+- Data-driven decision support
+
+### Mode 4: Regulatory Advisor
+- Uses ERA dataset + RAG
+- Compliance-focused responses
+- Maps regulations to operations
+
+---
+
+## Project Structure
+
+```
+UETCL/
+├── frontend/              # Next.js frontend application
+│   ├── app/              # Next.js App Router (pages + API routes)
+│   ├── components/       # React components (ui, chat, admin, analytics)
+│   ├── lib/             # Utilities (utils.ts)
+│   └── public/          # Static assets
+├── backend/              # FastAPI backend application
+│   ├── main.py          # Application entry point
+│   ├── db.py            # Database connection
+│   ├── models.py        # SQLAlchemy models
+│   ├── rag.py           # RAG implementation
+│   ├── routers/         # API routers (chat, admin, ingest)
+│   ├── services/        # Core services (embeddings, llm, qdrant, chunking)
+│   ├── alembic/         # Database migrations
+│   └── storage/         # Local file storage
+├── data/                 # Data files
+│   ├── strategy/        # UETCL strategy PDFs
+│   ├── era/             # ERA regulatory documents
+│   └── analytics/       # Outage CSV and datasets
+├── docs/                 # Documentation
+├── infra/                # Docker Compose infrastructure
+├── scripts/              # Utility scripts (placeholders)
+└── tests/                # Test suites (placeholders)
+```
+
+---
+
+## Development Guidelines
+
+### When Working on Frontend
+- Use shadcn/ui components for consistency
+- Follow the space-themed design system
+- Ensure responsive design for mobile and desktop
+- Keep components modular and reusable
+- Use TypeScript for type safety
+
+### When Working on Backend
+- Follow FastAPI best practices
+- Use async/await for I/O operations
+- Implement proper error handling
+- Add logging for debugging
+- Use Pydantic models for validation
+- Keep RAG logic separate from API routes
+
+### When Working on RAG System
+- Test both semantic and keyword search independently
+- Validate RRF fusion results
+- Monitor retrieval quality
+- Keep embedding dimensions consistent
+- Cache embeddings when possible
+
+### When Working on Agents
+- Each mode should have clear responsibilities
+- Use prompt templates for consistency
+- Implement fallback logic
+- Log agent decisions for debugging
+- Test mode transitions
+
+---
+
+## Environment Variables
+
+### Backend
+```
+DATABASE_URL=postgresql://user:pass@localhost/sisuiq
+QDRANT_URL=http://localhost:6333
+OPENAI_API_KEY=sk-...
+JWT_SECRET=your-secret-key
+ENVIRONMENT=development
+```
+
+### Frontend
+```
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_APP_NAME=SISUiQ
+```
+
+---
+
+## Demo Objective
+
+Show how SISUiQ can unify Strategy, Analytics, and Regulation into a single AI decision-support copilot for UETCL and ERA stakeholders.
+
+**Target Audience**:
+- Consultants
+- Corporate executives
+- Regulators
+- Engineers
+- Utility stakeholders
+
+**Key Differentiators**:
+- Hybrid RAG for superior retrieval accuracy
+- Multi-mode agentic reasoning
+- Real-time analytics integration
+- Regulatory compliance mapping
+- Citation-backed responses
+- Futuristic, professional UI
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Python 3.13+ (or 3.11+)
+- Node.js 20+ LTS (or latest 22+)
+- PostgreSQL 16+ (or 14+)
+- Qdrant (Docker recommended)
+- OpenAI API key
+
+### Quick Start
+```bash
+# Backend
+cd backend
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install -r requirements.txt
+uvicorn main:app --reload
+
+# Frontend
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+## Notes for AI Assistant
+
+- This is a demo project showcasing enterprise AI capabilities
+- Focus on production-quality code with proper error handling
+- Prioritize retrieval accuracy and response quality
+- Keep the UI professional and impressive
+- Ensure all citations are properly tracked
+- Document complex logic thoroughly
+- Consider performance at scale
+- Implement proper security practices (even for demo)

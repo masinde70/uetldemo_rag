@@ -1,0 +1,225 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ========================================
+     LIGHT MODE (Default)
+     Professional ERA brand: Blue, White, Red
+     ======================================== */
+  :root {
+    /* Backgrounds */
+    --background: 0 0% 100%;           /* #FFFFFF */
+    --foreground: 222 47% 11%;         /* #0F172A */
+
+    /* Cards */
+    --card: 210 40% 98%;               /* #F8FAFC */
+    --card-foreground: 222 47% 11%;
+
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Primary (ERA Blue) */
+    --primary: 221 100% 31%;           /* #0033A0 */
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary */
+    --secondary: 214 32% 91%;          /* #E2E8F0 */
+    --secondary-foreground: 222 47% 11%;
+
+    /* Accent (Cyan for light mode) */
+    --accent: 200 98% 40%;             /* #0284C7 */
+    --accent-foreground: 0 0% 100%;
+
+    /* Muted */
+    --muted: 210 40% 96%;              /* #F1F5F9 */
+    --muted-foreground: 215 16% 47%;   /* #64748B */
+
+    /* Success */
+    --success: 160 84% 31%;            /* #059669 */
+    --success-foreground: 0 0% 100%;
+
+    /* Warning */
+    --warning: 38 92% 44%;             /* #D97706 */
+    --warning-foreground: 222 47% 11%;
+
+    /* Destructive (ERA Red) */
+    --destructive: 0 72% 51%;          /* #DC2626 */
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders */
+    --border: 214 32% 91%;             /* #E2E8F0 */
+    --input: 214 32% 91%;
+    --ring: 221 100% 31%;              /* ERA Blue */
+
+    /* Border radius */
+    --radius: 0.75rem;
+
+    /* === Semantic Surface Tokens === */
+    --bg-primary: 0 0% 100%;
+    --bg-surface-1: 210 40% 98%;
+    --bg-surface-2: 210 40% 96%;
+    --bg-surface-3: 214 32% 91%;
+
+    /* === Semantic Text Tokens === */
+    --text-primary: 222 47% 11%;
+    --text-secondary: 215 19% 35%;
+    --text-tertiary: 215 16% 47%;
+
+    /* === Semantic Border Tokens === */
+    --border-subtle: 210 40% 96%;
+    --border-default: 214 32% 91%;
+    --border-emphasis: 214 20% 82%;
+
+    /* === Brand Accent Tokens === */
+    --accent-primary: 221 100% 31%;    /* ERA Blue */
+    --accent-secondary: 263 70% 58%;   /* Violet */
+    --accent-tertiary: 0 72% 51%;      /* ERA Red */
+
+    /* === Neon Colors (mapped to light mode) === */
+    --neon-cyan: 200 98% 40%;
+    --neon-violet: 263 70% 58%;
+    --neon-orange: 25 95% 53%;
+    --neon-green: 160 84% 31%;
+    --neon-yellow: 38 92% 44%;
+    --neon-red: 0 72% 51%;
+  }
+
+  /* ========================================
+     DARK MODE
+     Premium Neon Cyberpunk Aesthetic
+     ======================================== */
+  .dark {
+    /* Backgrounds */
+    --background: 220 71% 5%;          /* #020617 */
+    --foreground: 210 40% 98%;         /* #E2E8F0 */
+
+    /* Cards */
+    --card: 222 47% 11%;               /* #1E293B */
+    --card-foreground: 210 40% 98%;
+
+    /* Popover */
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary (Neon Cyan) */
+    --primary: 186 94% 53%;            /* #22D3EE */
+    --primary-foreground: 220 71% 5%;
+
+    /* Secondary (Neon Violet) */
+    --secondary: 265 89% 62%;          /* #A855F7 */
+    --secondary-foreground: 210 40% 98%;
+
+    /* Accent (Neon Orange) */
+    --accent: 20 98% 54%;              /* #F97316 */
+    --accent-foreground: 210 40% 98%;
+
+    /* Muted */
+    --muted: 215 20% 20%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Success */
+    --success: 160 84% 39%;            /* #10B981 */
+    --success-foreground: 210 40% 98%;
+
+    /* Warning */
+    --warning: 38 92% 50%;             /* #F59E0B */
+    --warning-foreground: 220 71% 5%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;          /* #EF4444 */
+    --destructive-foreground: 210 40% 98%;
+
+    /* Borders */
+    --border: 215 20% 20%;             /* #334155 */
+    --input: 215 20% 20%;
+    --ring: 186 94% 53%;               /* Neon Cyan */
+
+    /* === Semantic Surface Tokens === */
+    --bg-primary: 220 71% 5%;
+    --bg-surface-1: 222 47% 10%;
+    --bg-surface-2: 222 47% 11%;
+    --bg-surface-3: 215 25% 27%;
+
+    /* === Semantic Text Tokens === */
+    --text-primary: 210 40% 98%;
+    --text-secondary: 215 16% 65%;
+    --text-tertiary: 215 16% 55%;
+
+    /* === Semantic Border Tokens === */
+    --border-subtle: 222 47% 11%;
+    --border-default: 215 25% 27%;
+    --border-emphasis: 215 20% 35%;
+
+    /* === Brand Accent Tokens === */
+    --accent-primary: 186 94% 53%;     /* Neon Cyan */
+    --accent-secondary: 265 89% 62%;   /* Neon Violet */
+    --accent-tertiary: 20 98% 54%;     /* Neon Orange */
+
+    /* === Neon Colors (full brightness in dark mode) === */
+    --neon-cyan: 186 94% 53%;
+    --neon-violet: 265 89% 62%;
+    --neon-orange: 20 98% 54%;
+    --neon-green: 160 84% 39%;
+    --neon-yellow: 38 92% 50%;
+    --neon-red: 0 84% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1, "ss02" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Premium display headings */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .font-display {
+    font-family: var(--font-display), system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  /* Monospace with ligatures */
+  code,
+  pre,
+  .font-mono {
+    font-family: var(--font-geist-mono), monospace;
+    font-feature-settings: "liga" 1, "calt" 1;
+  }
+}
+
+/* Theme transition */
+@layer utilities {
+  .theme-transition {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+}
+
+/* Custom scrollbar - theme aware */
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: hsl(var(--bg-surface-1));
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border-default));
+    border-radius: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--border-emphasis));
+  }
+}

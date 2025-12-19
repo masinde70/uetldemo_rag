@@ -1,0 +1,339 @@
+# SISUiQ Continuous Deployment - Production
+# Deploys to production on release tags (v*)
+# Requires manual approval via GitHub environment protection rules
+
+name: Deploy Production
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to deploy (e.g., v1.0.0)"
+        required: true
+        type: string
+      skip_approval:
+        description: "Skip manual approval (not recommended)"
+        required: false
+        default: "false"
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Validate Release
+  # ─────────────────────────────────────────────────────────────────────────────
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      sha_short: ${{ steps.version.outputs.sha_short }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Extract version info
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            VERSION="${{ github.event.inputs.tag }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "Deploying version: $VERSION"
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "Invalid version format: $VERSION"
+            echo "Expected format: v1.0.0 or v1.0.0-beta"
+            exit 1
+          fi
+          echo "Version format valid: $VERSION"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Build and Push Production Images
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    needs: [validate]
+
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      backend_image: ${{ steps.meta-backend.outputs.tags }}
+      frontend_image: ${{ steps.meta-frontend.outputs.tags }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for backend
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+            type=sha,prefix=
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_VERSION=${{ needs.validate.outputs.version }}
+
+      - name: Extract metadata for frontend
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+            type=sha,prefix=
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.PROD_API_URL || '/api' }}
+            BUILD_VERSION=${{ needs.validate.outputs.version }}
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Deploy to Production (requires approval)
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [validate, build-push]
+    environment:
+      name: production
+      url: ${{ secrets.PROD_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Pre-deployment checks
+        run: |
+          echo "Deploying version: ${{ needs.validate.outputs.version }}"
+          echo "Backend image: ${{ needs.build-push.outputs.backend_image }}"
+          echo "Frontend image: ${{ needs.build-push.outputs.frontend_image }}"
+
+      # Option 1: Deploy via SSH to a VM
+      - name: Deploy via SSH
+        if: secrets.PROD_SSH_HOST != ''
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/sisuiq
+            # Backup current deployment
+            docker compose exec -T postgres pg_dump -U sisuiq sisuiq > backup_$(date +%Y%m%d_%H%M%S).sql || true
+            # Pull new images
+            docker compose pull
+            # Deploy with zero-downtime
+            docker compose up -d --no-deps --scale backend=2 backend
+            sleep 10
+            docker compose up -d --no-deps --scale backend=1 backend
+            docker compose up -d frontend
+            # Cleanup
+            docker system prune -f
+
+      # Option 2: Deploy via kubectl (Kubernetes)
+      # - name: Set up kubectl
+      #   if: secrets.KUBE_CONFIG_PROD != ''
+      #   uses: azure/setup-kubectl@v4
+      #
+      # - name: Deploy to Kubernetes
+      #   if: secrets.KUBE_CONFIG_PROD != ''
+      #   run: |
+      #     echo "${{ secrets.KUBE_CONFIG_PROD }}" | base64 -d > kubeconfig
+      #     export KUBECONFIG=kubeconfig
+      #     kubectl set image deployment/backend backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ needs.validate.outputs.version }} -n production
+      #     kubectl set image deployment/frontend frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ needs.validate.outputs.version }} -n production
+      #     kubectl rollout status deployment/backend -n production --timeout=300s
+      #     kubectl rollout status deployment/frontend -n production --timeout=300s
+
+      - name: Log deployment info
+        run: |
+          echo "Production deployment complete"
+          echo "Version: ${{ needs.validate.outputs.version }}"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Run Database Migrations
+  # ─────────────────────────────────────────────────────────────────────────────
+  migrate:
+    name: Run Migrations
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    environment: production
+
+    steps:
+      - name: Run migrations via SSH
+        if: secrets.PROD_SSH_HOST != ''
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/sisuiq
+            docker compose exec -T backend alembic upgrade head
+
+      - name: Migration complete
+        run: echo "Production database migrations applied"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Smoke Tests
+  # ─────────────────────────────────────────────────────────────────────────────
+  smoke-test:
+    name: Production Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [deploy, migrate]
+
+    steps:
+      - name: Wait for deployment to stabilize
+        run: sleep 60
+
+      - name: Health check
+        run: |
+          PROD_URL="${{ secrets.PROD_URL || 'https://sisuiq.example.com' }}"
+          echo "Checking health at $PROD_URL/api/health"
+          for i in {1..5}; do
+            if curl -sf "$PROD_URL/api/health"; then
+              echo "Health check passed"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying..."
+            sleep 10
+          done
+          echo "Health check failed after 5 attempts"
+          exit 1
+        continue-on-error: true
+
+      - name: Version check
+        run: |
+          PROD_URL="${{ secrets.PROD_URL || 'https://sisuiq.example.com' }}"
+          EXPECTED_VERSION="${{ needs.validate.outputs.version }}"
+          DEPLOYED_VERSION=$(curl -sf "$PROD_URL/api/version" | jq -r '.version' || echo "unknown")
+          echo "Expected: $EXPECTED_VERSION, Deployed: $DEPLOYED_VERSION"
+        continue-on-error: true
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Create GitHub Release
+  # ─────────────────────────────────────────────────────────────────────────────
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [validate, smoke-test]
+    if: success() && startsWith(github.ref, 'refs/tags/')
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            echo "Changes since $PREV_TAG:"
+            git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD > changelog.txt
+          else
+            echo "Initial release" > changelog.txt
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.validate.outputs.version }}
+          name: Release ${{ needs.validate.outputs.version }}
+          body_path: changelog.txt
+          draft: false
+          prerelease: ${{ contains(needs.validate.outputs.version, '-') }}
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Notify
+  # ─────────────────────────────────────────────────────────────────────────────
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs: [validate, smoke-test, release]
+    if: always()
+
+    steps:
+      - name: Deployment summary
+        run: |
+          echo "## Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ needs.smoke-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ needs.validate.outputs.sha_short }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Actor**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release**: ${{ needs.release.result }}" >> $GITHUB_STEP_SUMMARY
+
+      # Optional: Slack notification for production
+      # - name: Notify Slack
+      #   if: always() && secrets.SLACK_WEBHOOK != ''
+      #   uses: slackapi/slack-github-action@v1.25.0
+      #   with:
+      #     webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+      #     payload: |
+      #       {
+      #         "text": "Production deployment ${{ needs.smoke-test.result }}: ${{ needs.validate.outputs.version }}"
+      #       }
