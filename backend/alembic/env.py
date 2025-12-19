@@ -15,8 +15,11 @@ from backend.models import Base
 config = context.config
 
 # Override sqlalchemy.url from environment variable if set
+# Railway provides postgresql:// but asyncpg needs postgresql+asyncpg://
 database_url = os.getenv("DATABASE_URL")
 if database_url:
+    if database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
     config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging

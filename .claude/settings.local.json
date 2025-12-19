@@ -9,7 +9,25 @@
       "Bash(cat:*)",
       "Bash(./run.sh)",
       "Bash(docker compose:*)",
-      "Bash(make start:*)"
+      "Bash(make start:*)",
+      "Bash(railway --version:*)",
+      "Bash(railway whoami:*)",
+      "Bash(railway status:*)",
+      "Bash(railway service:*)",
+      "Bash(railway help:*)",
+      "Bash(railway add:*)",
+      "Bash(railway up:*)",
+      "Bash(railway variables:*)",
+      "Bash(railway domain:*)",
+      "Bash(railway logs:*)",
+      "Bash(railway deployment:*)",
+      "Bash(railway redeploy:*)",
+      "Bash(timeout 10 railway logs:*)",
+      "Bash(timeout 15 railway logs:*)",
+      "Bash(chmod:*)",
+      "Bash(timeout 20 railway logs:*)",
+      "Bash(timeout 30 railway logs:*)",
+      "Bash(git add:*)"
     ]
   }
 }

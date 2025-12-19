@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
@@ -20,4 +20,5 @@ ENV PYTHONPATH=/app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Railway provides PORT env var dynamically
+CMD uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}

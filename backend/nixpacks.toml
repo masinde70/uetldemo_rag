@@ -1,0 +1,8 @@
+[variables]
+PYTHONPATH = "/app"
+
+[phases.setup]
+aptPkgs = ["tesseract-ocr", "poppler-utils"]
+
+[start]
+cmd = "bash start.sh"
