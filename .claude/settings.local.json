@@ -27,7 +27,15 @@
       "Bash(chmod:*)",
       "Bash(timeout 20 railway logs:*)",
       "Bash(timeout 30 railway logs:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd Railway deployment configuration\n\n- Update Dockerfile to use Python 3.11 and dynamic PORT\n- Add nixpacks.toml for Railway build configuration\n- Add Procfile and start.sh for proper module structure\n- Add app.py wrapper for Railpack compatibility\n- Fix DATABASE_URL transformation for asyncpg compatibility\n- Add frontend railway.toml configuration\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(railway run:*)",
+      "Bash(DATABASE_URL=\"postgresql+asyncpg://postgres:MBvgmvhqPKfYdAHToZuRmAdadIDavWyA@crossover.proxy.rlwy.net:52636/railway\" python -m backend.seed:*)",
+      "Bash(DATABASE_URL=\"postgresql+asyncpg://postgres:MBvgmvhqPKfYdAHToZuRmAdadIDavWyA@crossover.proxy.rlwy.net:52636/railway\":*)",
+      "Bash(backend/venv/bin/python -m backend.seed)",
+      "Bash(backend/venv/bin/pip install:*)"
     ]
   }
 }
