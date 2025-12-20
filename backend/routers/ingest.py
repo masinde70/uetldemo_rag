@@ -108,11 +108,29 @@ def extract_pdf_text(file_path: Path) -> tuple[str, list[int]]:
         full_text = ""
         page_breaks = []
         try:
-            images = convert_from_path(file_path, dpi=200)
-            for img in images:
+            # Process one page at a time to reduce memory usage
+            # Use lower DPI (150 instead of 200) to save memory
+            from pdf2image.pdf2image import pdfinfo_from_path
+            import gc
+
+            info = pdfinfo_from_path(file_path)
+            num_pages = info.get("Pages", 1)
+
+            for page_num in range(1, num_pages + 1):
                 page_breaks.append(len(full_text))
-                page_text = pytesseract.image_to_string(img) or ""
-                full_text += page_text + "\n\n"
+                # Convert single page at a time
+                images = convert_from_path(
+                    file_path,
+                    dpi=150,  # Lower DPI to reduce memory
+                    first_page=page_num,
+                    last_page=page_num
+                )
+                if images:
+                    page_text = pytesseract.image_to_string(images[0]) or ""
+                    full_text += page_text + "\n\n"
+                    # Explicitly free memory
+                    del images
+                    gc.collect()
         except Exception as e:
             raise RuntimeError(f"OCR extraction failed: {e}")
 
