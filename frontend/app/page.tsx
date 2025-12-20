@@ -205,7 +205,7 @@ export default function Home() {
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-          className="flex flex-col flex-shrink-0"
+          className="flex flex-col flex-shrink-0 min-h-0"
         >
           <Sidebar selectedMode={mode} onModeChange={handleModeChange} />
         </motion.div>
@@ -316,6 +316,7 @@ export default function Home() {
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.6 }}
+          className="flex flex-col min-h-0"
         >
           <InsightsPanel sources={sources} analytics={analytics} mode={mode} />
         </motion.div>

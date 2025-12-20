@@ -272,7 +272,7 @@ export function InsightsPanel({ sources, analytics, mode = "strategy_qa" }: Insi
   const displayExamples = generatedTips?.sample_questions?.length ? generatedTips.sample_questions : currentTips.examples;
 
   return (
-    <aside className="w-80 border-l border-border-default/50 bg-bg-surface-1/40 backdrop-blur-md flex flex-col" data-testid="insights-panel">
+    <aside className="w-80 border-l border-border-default/50 bg-bg-surface-1/40 backdrop-blur-md flex flex-col min-h-0 overflow-hidden" data-testid="insights-panel">
       <div className="p-4 border-b border-border-default/50 bg-transparent text-text-primary">
         <h2 className="text-sm font-semibold font-display">Insights</h2>
       </div>

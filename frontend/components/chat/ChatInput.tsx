@@ -61,7 +61,7 @@ export function ChatInput({
               "w-full resize-none rounded-xl border border-border-default bg-bg-surface-2/70 px-4 py-3 text-sm text-text-primary backdrop-blur-sm transition-all duration-250",
               "placeholder:text-text-secondary focus:outline-none focus:border-neon-cyan focus:ring-4 focus:ring-neon-cyan/20 focus:shadow-glow-cyan/30",
               "disabled:opacity-50 disabled:cursor-not-allowed",
-              "min-h-[44px] max-h-[200px]"
+              "min-h-[44px] max-h-[200px] overflow-y-auto"
             )}
           />
         </div>

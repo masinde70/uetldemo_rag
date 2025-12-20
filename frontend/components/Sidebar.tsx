@@ -51,7 +51,7 @@ export function Sidebar({ selectedMode, onModeChange }: SidebarProps) {
           Modes
         </h2>
       </div>
-      <nav className="flex-1 p-2 space-y-1">
+      <nav className="flex-1 p-2 space-y-1 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-border-default scrollbar-track-transparent">
         {modes.map((mode) => {
           const Icon = mode.icon;
           const isSelected = selectedMode === mode.id;
