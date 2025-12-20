@@ -45,6 +45,13 @@ interface DocumentInfo {
   chunk_count: number;
 }
 
+interface GeneratedTips {
+  tips: string[];
+  sample_questions: string[];
+  document_count: number;
+  generated_from: string[];
+}
+
 // Mode-specific tips configuration based on available documents
 const getModeTips = (docs: DocumentInfo[]): Record<ChatMode, { title: string; tips: string[]; examples: string[]; documents: string[]; hasRealDocs: boolean }> => {
   // Filter only documents with chunks (actually indexed)
@@ -189,7 +196,11 @@ const getModeTips = (docs: DocumentInfo[]): Record<ChatMode, { title: string; ti
 export function InsightsPanel({ sources, analytics, mode = "strategy_qa" }: InsightsPanelProps) {
   const [documents, setDocuments] = useState<DocumentInfo[]>([]);
   const [isLoadingDocs, setIsLoadingDocs] = useState(true);
+  const [generatedTips, setGeneratedTips] = useState<GeneratedTips | null>(null);
+  const [isLoadingTips, setIsLoadingTips] = useState(false);
+  const [lastDocCount, setLastDocCount] = useState(0);
   const REFRESH_INTERVAL_MS = 30_000; // periodic refresh
+  const TIPS_REFRESH_INTERVAL_MS = 60_000; // tips refresh less frequently
 
   const hasAnalytics = analytics && Object.keys(analytics).length > 0;
   const hasDemoData = analytics?.saidi !== undefined;
@@ -205,7 +216,15 @@ export function InsightsPanel({ sources, analytics, mode = "strategy_qa" }: Insi
         });
         if (response.ok) {
           const data = await response.json();
-          setDocuments(data.data || []);
+          const docs = data.data || [];
+          setDocuments(docs);
+
+          // If document count changed, refresh tips
+          const indexedCount = docs.filter((d: DocumentInfo) => d.chunk_count > 0).length;
+          if (indexedCount !== lastDocCount) {
+            setLastDocCount(indexedCount);
+            fetchTips();
+          }
         }
       } catch (error) {
         console.error("Failed to fetch documents:", error);
@@ -213,17 +232,44 @@ export function InsightsPanel({ sources, analytics, mode = "strategy_qa" }: Insi
         setIsLoadingDocs(false);
       }
     };
+
+    const fetchTips = async () => {
+      setIsLoadingTips(true);
+      try {
+        const response = await fetch("/api/admin/tips", {
+          headers: {
+            "Authorization": "Bearer demo-admin-token-change-me"
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setGeneratedTips(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch tips:", error);
+      } finally {
+        setIsLoadingTips(false);
+      }
+    };
+
     fetchDocuments();
+    fetchTips();
 
-    const interval = setInterval(() => {
-      fetchDocuments();
-    }, REFRESH_INTERVAL_MS);
+    const docInterval = setInterval(fetchDocuments, REFRESH_INTERVAL_MS);
+    const tipsInterval = setInterval(fetchTips, TIPS_REFRESH_INTERVAL_MS);
 
-    return () => clearInterval(interval);
-  }, []);
-  
+    return () => {
+      clearInterval(docInterval);
+      clearInterval(tipsInterval);
+    };
+  }, [lastDocCount]);
+
   const modeTips = getModeTips(documents);
   const currentTips = modeTips[mode];
+
+  // Use LLM-generated tips if available, fallback to static tips
+  const displayTips = generatedTips?.tips?.length ? generatedTips.tips : currentTips.tips;
+  const displayExamples = generatedTips?.sample_questions?.length ? generatedTips.sample_questions : currentTips.examples;
 
   return (
     <aside className="w-80 border-l border-border-default/50 bg-bg-surface-1/40 backdrop-blur-md flex flex-col" data-testid="insights-panel">
@@ -453,9 +499,17 @@ export function InsightsPanel({ sources, analytics, mode = "strategy_qa" }: Insi
               
               {/* Tips */}
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-text-tertiary mb-2 font-semibold">Tips</p>
+                <p className="text-[10px] uppercase tracking-wider text-text-tertiary mb-2 font-semibold flex items-center gap-2">
+                  Tips
+                  {isLoadingTips && (
+                    <span className="inline-block w-3 h-3 border border-neon-cyan/50 border-t-neon-cyan rounded-full animate-spin" />
+                  )}
+                  {generatedTips && (
+                    <span className="text-neon-cyan text-[8px] font-normal">AI Generated</span>
+                  )}
+                </p>
                 <ul className="space-y-2 text-xs text-text-secondary">
-                  {currentTips.tips.map((tip, idx) => (
+                  {displayTips.map((tip, idx) => (
                     <li key={idx} className="flex gap-2">
                       <span className={tip.startsWith("⚠️") ? "text-neon-yellow" : "text-neon-yellow font-bold"}>{tip.startsWith("⚠️") ? "" : "•"}</span>
                       <span className={tip.startsWith("⚠️") ? "text-neon-yellow" : ""}>{tip}</span>
@@ -463,14 +517,19 @@ export function InsightsPanel({ sources, analytics, mode = "strategy_qa" }: Insi
                   ))}
                 </ul>
               </div>
-              
+
               {/* Example Questions */}
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-text-tertiary mb-2 font-semibold">Try Asking</p>
+                <p className="text-[10px] uppercase tracking-wider text-text-tertiary mb-2 font-semibold flex items-center gap-2">
+                  Try Asking
+                  {generatedTips?.sample_questions?.length ? (
+                    <span className="text-neon-cyan text-[8px] font-normal">from your docs</span>
+                  ) : null}
+                </p>
                 <ul className="space-y-2">
-                  {currentTips.examples.map((example, idx) => (
-                    <li 
-                      key={idx} 
+                  {displayExamples.map((example, idx) => (
+                    <li
+                      key={idx}
                       className="text-xs text-text-secondary bg-bg-surface-3/50 rounded-lg px-3 py-2 border border-border-default/30 hover:border-neon-cyan/30 hover:bg-bg-surface-3/70 transition-colors cursor-pointer"
                     >
                       <span className="text-neon-cyan mr-1">"</span>

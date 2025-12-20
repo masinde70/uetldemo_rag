@@ -593,8 +593,160 @@ async def reindex_document(
             new_chunks=result["new_chunks"],
             message=f"Successfully reindexed document '{result['name']}': {result['old_chunks']} → {result['new_chunks']} chunks",
         )
-        
+
     except DocumentNotFoundError:
         raise HTTPException(status_code=404, detail=f"Document {document_id} not found")
     except DocumentOperationError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- Tips Generation Endpoint ---
+
+
+class TipsResponse(BaseModel):
+    """Response for generated tips."""
+    tips: list[str]
+    sample_questions: list[str]
+    document_count: int
+    generated_from: list[str]
+
+
+@router.get("/tips", response_model=TipsResponse)
+async def get_document_tips(
+    limit: int = Query(default=5, le=10, description="Number of sample questions to generate"),
+    _admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Generate tips and sample questions from indexed documents.
+
+    Uses LLM to analyze document chunks and generate relevant sample questions.
+    """
+    import os
+    from openai import AsyncOpenAI
+
+    # Get documents with chunks
+    chunk_count = (
+        select(func.count(DocumentChunk.id))
+        .where(DocumentChunk.document_id == Document.id)
+        .correlate(Document)
+        .scalar_subquery()
+    )
+
+    stmt = (
+        select(Document.id, Document.name, Document.type, Document.source, chunk_count.label("chunk_count"))
+        .having(chunk_count > 0)
+        .group_by(Document.id)
+        .order_by(Document.created_at.desc())
+        .limit(10)
+    )
+
+    result = await db.execute(stmt)
+    docs = result.all()
+
+    if not docs:
+        return TipsResponse(
+            tips=["Upload documents to enable Q&A", "The AI can only answer from indexed documents"],
+            sample_questions=["Upload your first PDF document to get started"],
+            document_count=0,
+            generated_from=[]
+        )
+
+    doc_names = [d.name for d in docs]
+    doc_ids = [d.id for d in docs]
+
+    # Get sample chunks from these documents (up to 3 chunks per doc, max 15 total)
+    chunk_stmt = (
+        select(DocumentChunk.text, DocumentChunk.source, Document.name)
+        .join(Document, DocumentChunk.document_id == Document.id)
+        .where(DocumentChunk.document_id.in_(doc_ids))
+        .order_by(func.random())
+        .limit(15)
+    )
+
+    chunk_result = await db.execute(chunk_stmt)
+    chunks = chunk_result.all()
+
+    if not chunks:
+        return TipsResponse(
+            tips=["Reference specific indexed documents by name", "The AI can only answer from indexed documents"],
+            sample_questions=[f"Summarize the {doc_names[0]} document" if doc_names else "Upload documents first"],
+            document_count=len(docs),
+            generated_from=doc_names
+        )
+
+    # Build context from chunks
+    chunk_texts = "\n\n---\n\n".join([
+        f"From '{c.name}':\n{c.text[:500]}..." if len(c.text) > 500 else f"From '{c.name}':\n{c.text}"
+        for c in chunks
+    ])
+
+    # Generate sample questions using LLM
+    try:
+        client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """You are a helpful assistant that generates sample questions users might ask about documents.
+
+Based on the document excerpts provided, generate practical sample questions that users could ask.
+Focus on questions about:
+- Key facts, figures, and dates
+- Processes and procedures
+- Requirements and obligations
+- Strategic goals and targets
+
+Return ONLY a JSON object with this format (no markdown):
+{
+    "questions": ["question1", "question2", ...],
+    "tips": ["tip1", "tip2", ...]
+}
+
+Generate 5 diverse, specific questions and 3 practical tips."""
+                },
+                {
+                    "role": "user",
+                    "content": f"Document names: {', '.join(doc_names)}\n\nDocument excerpts:\n{chunk_texts[:4000]}"
+                }
+            ],
+            temperature=0.7,
+            max_tokens=500,
+        )
+
+        import json
+        response_text = response.choices[0].message.content or "{}"
+        # Clean up response if wrapped in markdown
+        if response_text.startswith("```"):
+            response_text = response_text.split("```")[1]
+            if response_text.startswith("json"):
+                response_text = response_text[4:]
+
+        parsed = json.loads(response_text.strip())
+        questions = parsed.get("questions", [])[:limit]
+        tips = parsed.get("tips", ["Reference specific indexed documents by name"])[:4]
+
+        return TipsResponse(
+            tips=tips,
+            sample_questions=questions,
+            document_count=len(docs),
+            generated_from=doc_names[:5]
+        )
+
+    except Exception as e:
+        # Fallback to basic tips if LLM fails
+        return TipsResponse(
+            tips=[
+                "Reference specific indexed documents by name",
+                "Ask about KPIs, targets, and timelines",
+                "The AI can only answer from indexed documents"
+            ],
+            sample_questions=[
+                f"What are the key points in {doc_names[0]}?" if doc_names else "Upload documents first",
+                f"Summarize {doc_names[1] if len(doc_names) > 1 else doc_names[0]}",
+            ],
+            document_count=len(docs),
+            generated_from=doc_names[:5]
+        )
