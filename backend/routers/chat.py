@@ -20,6 +20,7 @@ from backend.models import (
     UserRole,
 )
 from backend.rag import hybrid_retrieve
+from backend.services.auth import hash_password
 from backend.services.llm import (
     build_context_prompt,
     build_system_prompt,
@@ -91,10 +92,12 @@ async def get_or_create_user(
     user = result.scalar_one_or_none()
 
     if not user:
+        # Create demo user with a random password (they won't login with it)
         user = User(
             email=email,
             name=email.split("@")[0].title(),
             role=UserRole.USER,
+            password_hash=hash_password("demo-user-temp-password"),
         )
         db.add(user)
         await db.flush()

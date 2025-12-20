@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db import get_db
 from backend.models import ChatMessage, ChatSession, User, UserRole
+from backend.services.auth import hash_password
 
 router = APIRouter()
 
@@ -68,10 +69,12 @@ async def get_or_create_user(email: str, db: AsyncSession) -> User:
     user = result.scalar_one_or_none()
 
     if not user:
+        # Create demo user with a random password (they won't login with it)
         user = User(
             email=email,
             name=email.split("@")[0].title(),
             role=UserRole.USER,
+            password_hash=hash_password("demo-user-temp-password"),
         )
         db.add(user)
         await db.flush()
