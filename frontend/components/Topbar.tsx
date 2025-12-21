@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { User, Settings, LogOut, Shield, ChevronDown } from "lucide-react";
+import { User, Settings, LogOut, Shield, ChevronDown, Menu, PanelRight } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import {
   DropdownMenu,
@@ -17,12 +17,16 @@ interface TopbarProps {
   userEmail?: string;
   userRole?: "admin" | "user";
   onSignOut?: () => Promise<void> | void;
+  onMenuToggle?: () => void;
+  onInsightsToggle?: () => void;
 }
 
-export function Topbar({ 
+export function Topbar({
   userEmail = "demo@uetcl.go.ug",
   userRole = "admin",  // Default to admin for demo
-  onSignOut
+  onSignOut,
+  onMenuToggle,
+  onInsightsToggle
 }: TopbarProps) {
   const initials = userEmail
     .split("@")[0]
@@ -52,8 +56,19 @@ export function Topbar({
   };
 
   return (
-    <header className="h-14 border-b border-border-default/50 bg-bg-surface-1/40 backdrop-blur-md flex items-center justify-between px-6 z-50 relative">
-      <div className="flex items-center gap-3">
+    <header className="h-14 border-b border-border-default/50 bg-bg-surface-1/40 backdrop-blur-md flex items-center justify-between px-4 md:px-6 z-50 relative">
+      <div className="flex items-center gap-2 md:gap-3">
+        {/* Mobile hamburger menu */}
+        {onMenuToggle && (
+          <button
+            onClick={onMenuToggle}
+            className="md:hidden p-2 rounded-lg hover:bg-bg-surface-2 text-text-secondary"
+            aria-label="Toggle menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        )}
+
         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <div className="w-8 h-8 rounded bg-primary flex items-center justify-center dark:shadow-glow-cyan/20">
             <span className="text-primary-foreground font-bold text-sm">S</span>
@@ -62,14 +77,16 @@ export function Topbar({
             <h1 className="text-lg font-semibold text-text-primary font-display">SISUiQ</h1>
           </div>
         </Link>
-        <span className="text-border-default">|</span>
-        <span className="text-sm text-text-secondary">
+        <span className="hidden md:inline text-border-default">|</span>
+        <span className="hidden md:inline text-sm text-text-secondary">
           ERA/UETCL Strategy Copilot
         </span>
       </div>
 
-      <div className="flex items-center gap-3">
-        <ThemeToggle />
+      <div className="flex items-center gap-2 md:gap-3">
+        <div className="hidden sm:block">
+          <ThemeToggle />
+        </div>
         
         {/* Admin Quick Access - visible only to admins */}
         {isAdmin && (
@@ -83,6 +100,17 @@ export function Topbar({
               <span className="hidden sm:inline">Admin</span>
             </Button>
           </Link>
+        )}
+
+        {/* Mobile insights toggle */}
+        {onInsightsToggle && (
+          <button
+            onClick={onInsightsToggle}
+            className="md:hidden p-2 rounded-lg hover:bg-bg-surface-2 text-text-secondary"
+            aria-label="Toggle insights"
+          >
+            <PanelRight className="h-5 w-5" />
+          </button>
         )}
 
         {/* User Menu Dropdown */}

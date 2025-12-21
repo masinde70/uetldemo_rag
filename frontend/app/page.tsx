@@ -37,6 +37,10 @@ export default function Home() {
   );
   const [useStreaming, setUseStreaming] = useState(true);
 
+  // Mobile sidebar/panel visibility state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isInsightsOpen, setIsInsightsOpen] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Streaming chat hook
@@ -197,7 +201,10 @@ export default function Home() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
       >
-        <Topbar />
+        <Topbar
+          onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+          onInsightsToggle={() => setIsInsightsOpen(!isInsightsOpen)}
+        />
       </motion.div>
 
       <div className="flex-1 flex overflow-hidden min-h-0">
@@ -205,10 +212,23 @@ export default function Home() {
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-          className="flex flex-col flex-shrink-0 min-h-0"
+          className="hidden md:flex flex-col flex-shrink-0 min-h-0"
         >
-          <Sidebar selectedMode={mode} onModeChange={handleModeChange} />
+          <Sidebar
+            selectedMode={mode}
+            onModeChange={handleModeChange}
+          />
         </motion.div>
+
+        {/* Mobile Sidebar - rendered outside the flex container */}
+        <div className="md:hidden">
+          <Sidebar
+            selectedMode={mode}
+            onModeChange={handleModeChange}
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+          />
+        </div>
 
         {/* Main Chat Area */}
         <main className="flex-1 flex flex-col bg-transparent relative min-h-0 overflow-hidden" data-testid="chat-area">
@@ -316,10 +336,25 @@ export default function Home() {
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.6 }}
-          className="flex flex-col min-h-0"
+          className="hidden md:flex flex-col min-h-0"
         >
-          <InsightsPanel sources={sources} analytics={analytics} mode={mode} />
+          <InsightsPanel
+            sources={sources}
+            analytics={analytics}
+            mode={mode}
+          />
         </motion.div>
+
+        {/* Mobile InsightsPanel - rendered outside the flex container */}
+        <div className="md:hidden">
+          <InsightsPanel
+            sources={sources}
+            analytics={analytics}
+            mode={mode}
+            isOpen={isInsightsOpen}
+            onClose={() => setIsInsightsOpen(false)}
+          />
+        </div>
       </div>
     </div>
   );

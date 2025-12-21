@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, BarChart3, Lightbulb, Zap, TrendingUp, AlertTriangle, Users, MapPin, FolderOpen } from "lucide-react";
+import { FileText, BarChart3, Lightbulb, Zap, TrendingUp, AlertTriangle, Users, MapPin, FolderOpen, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ChatMode } from "@/components/Sidebar";
 import {
@@ -35,6 +36,8 @@ interface InsightsPanelProps {
   sources: string[];
   analytics?: AnalyticsData | null;
   mode?: ChatMode;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 interface DocumentInfo {
@@ -193,7 +196,7 @@ const getModeTips = (docs: DocumentInfo[]): Record<ChatMode, { title: string; ti
   };
 };
 
-export function InsightsPanel({ sources, analytics, mode = "strategy_qa" }: InsightsPanelProps) {
+export function InsightsPanel({ sources, analytics, mode = "strategy_qa", isOpen = true, onClose }: InsightsPanelProps) {
   const [documents, setDocuments] = useState<DocumentInfo[]>([]);
   const [isLoadingDocs, setIsLoadingDocs] = useState(true);
   const [generatedTips, setGeneratedTips] = useState<GeneratedTips | null>(null);
@@ -272,10 +275,41 @@ export function InsightsPanel({ sources, analytics, mode = "strategy_qa" }: Insi
   const displayExamples = generatedTips?.sample_questions?.length ? generatedTips.sample_questions : currentTips.examples;
 
   return (
-    <aside className="w-80 border-l border-border-default/50 bg-bg-surface-1/40 backdrop-blur-md flex flex-col min-h-0 overflow-hidden" data-testid="insights-panel">
-      <div className="p-4 border-b border-border-default/50 bg-transparent text-text-primary">
-        <h2 className="text-sm font-semibold font-display">Insights</h2>
-      </div>
+    <>
+      {/* Mobile overlay */}
+      <AnimatePresence>
+        {isOpen && onClose && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={onClose}
+          />
+        )}
+      </AnimatePresence>
+
+      <aside
+        className={cn(
+          "w-80 border-l border-border-default/50 bg-bg-surface-1/40 backdrop-blur-md flex flex-col min-h-0 overflow-hidden",
+          "fixed md:relative inset-y-0 right-0 z-50 md:z-auto",
+          "transform transition-transform duration-300 ease-in-out md:transform-none",
+          isOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"
+        )}
+        data-testid="insights-panel"
+      >
+        <div className="p-4 border-b border-border-default/50 bg-transparent text-text-primary flex items-center justify-between">
+          <h2 className="text-sm font-semibold font-display">Insights</h2>
+          {/* Mobile close button */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="md:hidden p-1 rounded-lg hover:bg-bg-surface-2 text-text-secondary"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
+        </div>
 
       <ScrollArea className="flex-1 p-4 space-y-4">
         {/* Analytics KPIs Section */}
@@ -544,6 +578,7 @@ export function InsightsPanel({ sources, analytics, mode = "strategy_qa" }: Insi
         </motion.div>
 
       </ScrollArea>
-    </aside>
+      </aside>
+    </>
   );
 }
