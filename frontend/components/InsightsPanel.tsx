@@ -527,7 +527,7 @@ export function InsightsPanel({ sources, analytics, mode = "strategy_qa" }: Insi
                   ) : null}
                 </p>
                 <ul className="space-y-2">
-                  {displayExamples.map((example, idx) => (
+                  {displayExamples.slice(0, 2).map((example, idx) => (
                     <li
                       key={idx}
                       className="text-xs text-text-secondary bg-bg-surface-3/50 rounded-lg px-3 py-2 border border-border-default/30 hover:border-neon-cyan/30 hover:bg-bg-surface-3/70 transition-colors cursor-pointer"
