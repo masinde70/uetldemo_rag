@@ -35,7 +35,8 @@
       "Bash(DATABASE_URL=\"postgresql+asyncpg://postgres:MBvgmvhqPKfYdAHToZuRmAdadIDavWyA@crossover.proxy.rlwy.net:52636/railway\" python -m backend.seed:*)",
       "Bash(DATABASE_URL=\"postgresql+asyncpg://postgres:MBvgmvhqPKfYdAHToZuRmAdadIDavWyA@crossover.proxy.rlwy.net:52636/railway\":*)",
       "Bash(backend/venv/bin/python -m backend.seed)",
-      "Bash(backend/venv/bin/pip install:*)"
+      "Bash(backend/venv/bin/pip install:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

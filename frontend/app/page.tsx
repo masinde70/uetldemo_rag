@@ -336,7 +336,7 @@ export default function Home() {
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.6 }}
-          className="hidden md:flex flex-col min-h-0"
+          className="hidden lg:flex flex-col min-h-0"
         >
           <InsightsPanel
             sources={sources}
@@ -345,8 +345,8 @@ export default function Home() {
           />
         </motion.div>
 
-        {/* Mobile InsightsPanel - rendered outside the flex container */}
-        <div className="md:hidden">
+        {/* Mobile/Tablet InsightsPanel - rendered outside the flex container */}
+        <div className="lg:hidden">
           <InsightsPanel
             sources={sources}
             analytics={analytics}

@@ -102,11 +102,11 @@ export function Topbar({
           </Link>
         )}
 
-        {/* Mobile insights toggle */}
+        {/* Mobile/Tablet insights toggle - hidden at lg and above */}
         {onInsightsToggle && (
           <button
             onClick={onInsightsToggle}
-            className="md:hidden p-2 rounded-lg hover:bg-bg-surface-2 text-text-secondary"
+            className="lg:hidden p-2 rounded-lg hover:bg-bg-surface-2 text-text-secondary"
             aria-label="Toggle insights"
           >
             <PanelRight className="h-5 w-5" />
