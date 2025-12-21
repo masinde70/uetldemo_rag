@@ -84,9 +84,7 @@ export function Topbar({
       </div>
 
       <div className="flex items-center gap-2 md:gap-3">
-        <div className="hidden sm:block">
-          <ThemeToggle />
-        </div>
+        <ThemeToggle />
         
         {/* Admin Quick Access - visible only to admins */}
         {isAdmin && (
